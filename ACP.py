@@ -4,59 +4,60 @@ import random
 # Initialize Pygame
 pygame.init()
 
-# Screen setup
+# Screen settings
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Space Invaders")
 
-# Colors
-BLACK = (0, 0, 0)
+# Load background image
+background = pygame.image.load("background.png").convert()
 
-# Load player sprite
-player = pygame.image.load("player.png")
-player_rect = player.get_rect(midbottom=(WIDTH // 2, HEIGHT - 50))
+# Load and play background music
+pygame.mixer.init()
+pygame.mixer.music.load("background_music.mp3")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 
-# Load enemy sprites
-enemy_img = pygame.image.load("enemy.png")
-enemies = [pygame.Rect(random.randint(0, WIDTH - 50), random.randint(50, HEIGHT - 200), 50, 50) for _ in range(7)]
+# Define enemy class
+class Enemy:
+    def __init__(self, x, y):
+        self.image = pygame.image.load("enemy.png").convert_alpha()
+        self.x = x
+        self.y = y
+        self.speed = random.randint(2, 5)
 
-# Score tracking
-score = 0
-font = pygame.font.Font(None, 36)
+    def move(self):
+        self.x += self.speed
+        if self.x <= 0 or self.x >= WIDTH - 50:  # Bounce back when hitting edges
+            self.speed *= -1
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.x, self.y))
+
+# Create a list of enemies
+enemies = []
+for i in range(7):  # Create 7 enemies
+    x = random.randint(50, WIDTH - 100)
+    y = random.randint(50, 200)
+    enemies.append(Enemy(x, y))
 
 # Game loop
+clock = pygame.time.Clock()
 running = True
+
 while running:
-    screen.fill(BLACK)
-    
-    # Event handling
+    screen.blit(background, (0, 0))  # Draw background
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    # Player movement
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT] and player_rect.left > 0:
-        player_rect.x -= 5
-    if keys[pygame.K_RIGHT] and player_rect.right < WIDTH:
-        player_rect.x += 5
+    # Update and draw each enemy
+    for enemy in enemies:
+        enemy.move()
+        enemy.draw(screen)
 
-    # Collision detection
-    for enemy_rect in enemies:
-        if player_rect.colliderect(enemy_rect):
-            score += 1
-            enemy_rect.x, enemy_rect.y = random.randint(0, WIDTH - 50), random.randint(50, HEIGHT - 200)  # Reset position
-
-    # Drawing
-    screen.blit(player, player_rect)
-    for enemy_rect in enemies:
-        screen.blit(enemy_img, enemy_rect)
-
-    # Display score
-    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
-    screen.blit(score_text, (10, 10))
-
-    pygame.display.flip()
-    pygame.time.delay(30)
+    pygame.display.update()
+    clock.tick(60)
 
 pygame.quit()
